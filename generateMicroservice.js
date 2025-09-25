@@ -37,7 +37,7 @@ async function generateMicroserviceStructure(microserviceName) {
     await createFile(path.join(srcDir, 'config', 'data-source.ts'), dataSourceTemplate);
     await createFile(path.join(srcDir, 'controllers', 'index.ts'), '// index');
     await createFile(path.join(srcDir, 'controllers', `${microserviceName.toLowerCase()}Controller.ts`), '// Контроллер');
-    await createFile(path.join(srcDir, 'models', 'example.entity.ts'), '// Описание модели example');
+    await createFile(path.join(srcDir, 'models', 'booking.entity.ts'), '// Описание модели example');
     await createFile(path.join(srcDir, 'models', 'index.ts'), '// index');
     await createFile(path.join(srcDir, 'routes', `${microserviceName.toLowerCase()}Routes.ts`), '// Маршруты');
     await createFile(path.join(srcDir, 'routes', 'index.ts'), 'export default [];');
@@ -53,7 +53,7 @@ async function generateMicroserviceStructure(microserviceName) {
     await createFile(path.join(baseDir, 'package.json'), packageContent);
 
     const tsconfigTemplate = await fs.promises.readFile(path.join(__dirname, './template/tsconfig.template.json'), 'utf-8');
-    await createFile(path.join(baseDir, 'tsconfig.json'), tsconfigTemplate);
+    await createFile(path.join(baseDir, 'package.json'), tsconfigTemplate);
 
     console.log(`Структура для микросервиса "${microserviceName}" успешно создана!`);
 }

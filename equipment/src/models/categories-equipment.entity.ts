@@ -1,0 +1,35 @@
+import {Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, ManyToOne, JoinColumn} from "typeorm";
+import { IsEnum, IsInt, IsOptional, IsString } from "class-validator";
+import { OpenAPI } from "routing-controllers-openapi";
+import {Equipment} from "./Equipment.entity";
+
+@Entity()
+@OpenAPI({
+    description: 'categories-equipment request entity'
+})
+export class CategoriesEquipment extends BaseEntity {
+
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    // @ManyToOne(() => Equipment, { eager: true })
+    // @JoinColumn({ name: 'id' })
+    // categoryId: Equipment;
+
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    @IsString()
+    @IsOptional()
+    type: string | null;
+
+
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    @IsString()
+    @IsOptional()
+    description: string | null;
+
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    @IsString()
+    @IsOptional()
+    photoUrl: string | null;
+
+}
