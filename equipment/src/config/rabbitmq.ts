@@ -12,6 +12,7 @@ export async function connectRabbitMQ() {
 
         channel = await connection.createChannel();
 
+        await channel.assertQueue('booking_equipments');
 
         console.log('RabbitMQ connected and queues declared');
     } catch (err) {
