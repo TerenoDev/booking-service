@@ -1,10 +1,92 @@
-import { Body, Delete, Get, JsonController, Param, Post, Put, QueryParams, Res } from "routing-controllers";
-import { OpenAPI, ResponseSchema } from "routing-controllers-openapi";
-import { Booking } from "../models/booking.entity";
+import { Post, Get, Put, Delete, Req, Res, JsonController } from 'routing-controllers';
+import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
+import { IsString, IsNumber, IsIn, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
+import dataSource from '../config/data-source';
+import { Booking } from '../models/booking.entity';
 import { BookingService } from "../services/bookingService";
-import { Response } from 'express';
+import {notifyNewBooking} from "../socket";
+class CreateBookingDto {
+    @IsString()
+    @Type(() => String)
+    renterId: string;
 
-@JsonController('/bookings')
+    @IsString()
+    @Type(() => String)
+    equipmentId: string;
+
+    @IsNumber()
+    @Type(() => Number)
+    days: number;
+
+    @IsString()
+    @IsIn(['pending', 'confirmed', 'cancelled', 'completed'])
+    @IsOptional()
+    status?: string = 'pending';
+
+    @IsString()
+    @IsOptional()
+    message?: string;
+}
+
+class UpdateBookingDto {
+    @IsString()
+    @IsIn(['pending', 'confirmed', 'cancelled', 'completed'])
+    @IsOptional()
+    status?: string;
+
+    @IsString()
+    @IsOptional()
+    message?: string;
+
+    @IsNumber()
+    @IsOptional()
+    @Type(() => Number)
+    days?: number;
+}
+
+class BookingResponseDto {
+    @IsNumber()
+    id: number;
+
+    @IsString()
+    renterId: string;
+
+    @IsString()
+    equipmentId: string;
+
+    @IsNumber()
+    days: number;
+
+    @IsString()
+    status: string;
+
+    @IsString()
+    @IsOptional()
+    message?: string;
+
+    @IsString()
+    createdAt: string;
+}
+
+class ErrorResponseDto {
+    @IsString()
+    message: string;
+}
+
+class SuccessResponseDto {
+    @IsString()
+    message: string;
+}
+
+class BookingListResponseDto {
+    @IsNumber()
+    count: number;
+
+    bookings: BookingResponseDto[];
+}
+
+@JsonController('/booking')
 export default class BookingController {
 
     @Post()
@@ -15,19 +97,29 @@ export default class BookingController {
                 'application/json': {
                     schema: {
                         $ref: '#/components/schemas/Booking'
+                    },
+                    example: {
+                        renterId: "user123",
+                        equipmentId: "eq456",
+                        days: 7,
+                        status: "pending",
+                        message: "Additional notes"
                     }
                 }
             }
         }
     })
     @ResponseSchema(Booking)
-    async create(@Body() body: Partial<Booking>, @Res() res: Response) {
-        try {
-            const result = await BookingService.createBooking(body);
-            return res.status(201).send(result);
-        } catch (error) {
-            return res.status(400).send({ message: error.message });
-        }
+    async create(@Req() request: any, @Res() response: any) {
+        const bookingRepository = dataSource.getRepository(Booking);
+        const booking = bookingRepository.create(request.body);
+        const results = await bookingRepository.save(booking);
+        console.log(results);
+
+        const savedBooking = results[0];
+        await BookingService.changeAvailable(savedBooking.equipmentId);
+        notifyNewBooking(booking, parseInt(savedBooking.renterId));
+        return response.send(results);
     }
 
     @Get()
@@ -54,101 +146,73 @@ export default class BookingController {
             }
         ]
     })
-    async list(
-        @QueryParams() query: {
-            renterId?: string;
-            equipmentId?: string;
-            status?: string;
-        },
-        @Res() res: Response
-    ) {
-        try {
-            const result = await BookingService.listBookings(query);
-            return res.send(result);
-        } catch (error) {
-            return res.status(400).send({ message: error.message });
-        }
+    @ResponseSchema(Booking, { isArray: true })
+    async list(@Req() request: any, @Res() response: any) {
+        const bookingRepository = dataSource.getRepository(Booking);
+
+        const where: any = {};
+        if (request.query.renterId) where.renterId = request.query.renterId;
+        if (request.query.equipmentId) where.equipmentId = request.query.equipmentId;
+        if (request.query.status) where.status = request.query.status;
+
+        const results = await bookingRepository.find({ where });
+        return response.send(results);
     }
 
     @Get('/:id')
     @OpenAPI({
-        summary: 'Get booking by ID',
-        parameters: [
-            {
-                name: 'id',
-                in: 'path',
-                required: true,
-                schema: { type: 'number' }
-            }
-        ]
+        summary: 'Get booking by ID'
     })
-    async get(@Param('id') id: number, @Res() res: Response) {
-        try {
-            const result = await BookingService.getBookingById(id);
-            if (!result) {
-                return res.status(404).send({ message: "Booking not found" });
-            }
-            return res.send(result);
-        } catch (error) {
-            return res.status(400).send({ message: error.message });
-        }
-    }
+    @ResponseSchema(Booking)
+    async get(@Req() request: any, @Res() response: any) {
+        const bookingRepository = dataSource.getRepository(Booking);
+        const id = parseInt(request.params.id);
 
+        const results = await bookingRepository.findOneBy({ id });
+
+        if (!results) {
+            return response.status(404).send({ message: "Booking not found" });
+        }
+
+        return response.send(results);
+    }
+    //
     @Put('/:id')
     @OpenAPI({
-        summary: 'Update booking',
-        parameters: [
-            {
-                name: 'id',
-                in: 'path',
-                required: true,
-                schema: { type: 'number' }
-            }
-        ],
-        requestBody: {
-            content: {
-                'application/json': {
-                    schema: {
-                        $ref: '#/components/schemas/Booking'
-                    }
-                }
-            }
-        }
+        summary: 'Update booking'
     })
-    async update(@Param('id') id: number, @Body() body: Partial<Booking>, @Res() res: Response) {
-        try {
-            const result = await BookingService.updateBooking(id, body);
-            if (!result) {
-                return res.status(404).send({ message: "Booking not found" });
-            }
-            return res.send(result);
-        } catch (error) {
-            return res.status(400).send({ message: error.message });
+    @ResponseSchema(Booking)
+    async update(@Req() request: any, @Res() response: any) {
+        const bookingRepository = dataSource.getRepository(Booking);
+        const id = parseInt(request.params.id);
+
+
+        const existingBooking = await bookingRepository.findOneBy({ id });
+        if (!existingBooking) {
+            return response.status(404).send({ message: "Booking not found" });
         }
+
+
+        await bookingRepository.update(id, request.body);
+        const updatedBooking = await bookingRepository.findOneBy({ id });
+
+        return response.send(updatedBooking);
     }
 
     @Delete('/:id')
     @OpenAPI({
-        summary: 'Delete booking',
-        parameters: [
-            {
-                name: 'id',
-                in: 'path',
-                required: true,
-                schema: { type: 'number' }
-            }
-        ]
+        summary: 'Delete booking'
     })
-    async delete(@Param('id') id: number,
-                 @Res() res: Response) {
-        try {
-            const success = await BookingService.deleteBooking(id);
-            if (!success) {
-                return res.status(404).send({ message: "Booking not found" });
-            }
-            return res.status(204).send();
-        } catch (error) {
-            return res.status(400).send({ message: error.message });
+    async delete(@Req() request: any, @Res() response: any) {
+        const bookingRepository = dataSource.getRepository(Booking);
+        const id = parseInt(request.params.id);
+
+        const existingBooking = await bookingRepository.findOneBy({ id });
+        if (!existingBooking) {
+            return response.status(404).send({ message: "Booking not found" });
         }
+
+        await bookingRepository.delete(id);
+        return response.send({ message: "Booking deleted successfully" });
     }
 }

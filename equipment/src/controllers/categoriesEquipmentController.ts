@@ -1,46 +1,42 @@
-import {Body, Delete, Get, JsonController, Param, Post, Put, QueryParam, Req, Res} from "routing-controllers";
+import {Delete, Get, JsonController, Post, Put, Req, Res} from "routing-controllers";
 import { OpenAPI, ResponseSchema } from "routing-controllers-openapi";
 import { CategoriesEquipment } from "../models/categories-equipment.entity";
-import { IsEnum, IsInt, IsOptional, IsString } from "class-validator";
-//import EquipmentService from "../services/equipmentService";
-//import { getChannel } from "../config/rabbitmq";
-import {Equipment} from "../models/equipment.entity";
+import { IsOptional, IsString } from "class-validator";
 import CategoriesEquipmentService from "../services/categoriesEquipmentService";
-// // DTO
-// class CreateCategoriesEquipmentDTO {
-//
-//     @IsString()
-//     @IsOptional()
-//     type?: string;
-//
-//     @IsString()
-//     @IsOptional()
-//     description?: string;
-//
-//     @IsString()
-//     @IsOptional()
-//     photoUrl?: string;
-// }
+import {Type} from "class-transformer";
+class CreateCategoriesEquipmentDto {
+    @IsString()
+    @IsOptional()
+    @Type(() => String)
+    type?: string;
 
-// class UpdateExchangeDTO {
-//     @IsEnum(['PENDING', 'ACCEPTED', 'REJECTED'])
-//     @IsOptional()
-//     status?: 'PENDING' | 'ACCEPTED' | 'REJECTED';
-//
-//     @IsString()
-//     @IsOptional()
-//     message?: string;
-// }
-//
-// class ExchangeFilterDTO {
-//     @IsEnum(['PENDING', 'ACCEPTED', 'REJECTED'])
-//     @IsOptional()
-//     status?: 'PENDING' | 'ACCEPTED' | 'REJECTED';
-//
-//     @IsInt()
-//     @IsOptional()
-//     initiatorId?: number;
-// }
+    @IsString()
+    @IsOptional()
+    @Type(() => String)
+    description?: string;
+
+    @IsString()
+    @IsOptional()
+    @Type(() => String)
+    photoUrl?: string;
+}
+
+class CategoriesEquipmentResponseDto {
+    @IsString()
+    id: number;
+
+    @IsString()
+    @IsOptional()
+    type?: string;
+
+    @IsString()
+    @IsOptional()
+    description?: string;
+
+    @IsString()
+    @IsOptional()
+    photoUrl?: string;
+}
 
 @JsonController('/categories-equipment')
 @OpenAPI({ tags: ['CategoriesEquipment'] })
@@ -52,7 +48,7 @@ export default class CategoriesEquipmentController {
             content: {
                 'application/json': {
                     schema: {
-                        $ref: '#/components/schemas/categoriesEquipment'
+                        $ref: '#/components/schemas/CategoriesEquipment'
                     },
                     example: {
                         type: "PENDING",
@@ -87,8 +83,8 @@ export default class CategoriesEquipmentController {
 
 
     @Put('/:id')
-    async update(@Param("id") id: number, @Req() req: any, @Res() res: any) {
-        const result = await CategoriesEquipmentService.updateCategoriesEquipment(id, req.body);
+    async update( @Req() req: any, @Res() res: any) {
+        const result = await CategoriesEquipmentService.updateCategoriesEquipment(req.params.id, req.body);
         if (!result) {
             return res.status(404).send({ message: "Equipment not found" });
         }
@@ -96,11 +92,11 @@ export default class CategoriesEquipmentController {
     }
 
     @Delete('/:id')
-    async delete(@Param("id") id: number, @Res() res: any) {
-        const success = await CategoriesEquipmentService.deleteCategoriesEquipment(id);
+    async delete(@Req() request: any, @Res() response: any) {
+        const success = await CategoriesEquipmentService.deleteCategoriesEquipment(request.params.id);
         if (!success) {
-            return res.status(404).send({ message: "Equipment not found" });
+            return response.status(404).send({ message: "Equipment not found" });
         }
-        return res.status(204).send();
+        return response.status(204).send();
     }
 }

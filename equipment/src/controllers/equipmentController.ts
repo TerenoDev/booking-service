@@ -61,6 +61,8 @@ class EquipmentController {
         const result = await this.repository.find({ where: findOptions });
         return response.send(result);
     }
+
+
 }
 
 export default EquipmentController;

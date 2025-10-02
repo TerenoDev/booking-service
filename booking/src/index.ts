@@ -8,6 +8,8 @@ import routes from "./routes"
 import dataSource from "./config/data-source"
 import {useSwagger} from "./swagger";
 import AuthController from "./controllers/bookingController";
+import {connectRabbitMQ} from "./config/rabbitmq";
+import {initSocket} from "./socket";
 
 
 class App {
@@ -37,9 +39,7 @@ class App {
             classTransformer: true,
             defaultErrorHandler: true,
         };
-        useSwagger(app, {
-            controllers: [__dirname + '/controllers/*.ts'],
-            routePrefix: '/api'});
+        useSwagger(app, options);
         return app
     }
 
@@ -49,7 +49,7 @@ class App {
         return server
     }
 
-    public start(): void {
+    public async start(): Promise<void> {
         // establish database connection
         dataSource
             .initialize()
@@ -60,9 +60,13 @@ class App {
                 console.error("Error during Data Source initialization:", err)
             })
 
+        await connectRabbitMQ();
+
         this.server.listen(this.port, () => {
             console.log(`Running server on port ${this.port}`)
+            initSocket(this.server);
         })
+
     }
 }
 

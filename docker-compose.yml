@@ -2,9 +2,57 @@ services:
   db:
     image: postgres
     restart: always
-    ports: 
+    ports:
       - 15432:5432
     volumes:
       - ./dbs/postgres-data:/var/lib/postgresql/data
     env_file:
       - db.env
+
+  rabbitmq:
+    image: rabbitmq
+    hostname: rabbitmq
+    ports:
+      - 5672:5672
+
+  auth:
+    image: express-auth-backend
+    build:
+      context: ./auth
+    restart: always
+    ports:
+      - 8000:8000
+    volumes:
+      - /var/www/apps/auth/node_modules
+    env_file:
+      - ./auth/.env.prod
+    depends_on:
+      - db
+
+  booking:
+    image: express-booking-backend
+    build:
+      context: ./booking
+    restart: always
+    ports:
+      - 8002:8002
+    volumes:
+      - /var/www/apps/booking/node_modules
+    env_file:
+      - ./booking/.env.prod
+    depends_on:
+      - db
+
+  equipment:
+    image: express-equipment-backend
+    build:
+      context: ./equipment
+    restart: always
+    ports:
+      - 8004:8004
+    volumes:
+      - /var/www/apps/equipment/node_modules
+    env_file:
+      - ./equipment/.env.prod
+    depends_on:
+      - db

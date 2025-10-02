@@ -1,9 +1,6 @@
 import { defaultMetadataStorage } from 'class-transformer/cjs/storage';
 import { Express } from 'express';
-import {
-    getMetadataArgsStorage,
-    RoutingControllersOptions,
-} from 'routing-controllers';
+import {getMetadataArgsStorage, RoutingControllersOptions} from 'routing-controllers';
 import { routingControllersToSpec } from 'routing-controllers-openapi';
 import * as swaggerUi from 'swagger-ui-express';
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
@@ -32,8 +29,8 @@ export function useSwagger(
                 },
             },
             info: {
-                title: 'Equipment API documentation',
-                description: 'API documentation for Equipment',
+                title: 'equipment API documentation',
+                description: 'API documentation for equipment',
                 version: '1.0.0',
             },
         });

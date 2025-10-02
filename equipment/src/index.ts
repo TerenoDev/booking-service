@@ -4,11 +4,10 @@ import "reflect-metadata";
 import { createServer, Server } from "http"
 import { useSwagger } from "./swagger"
 import routes from "./routes"
-//import { connectRabbitMQ } from './config/rabbitmq';
-//import { initEquipment } from './services/equipmentService';
 import dataSource from "./config/data-source"
 import CategoriesEquipmentController from "./controllers/categoriesEquipmentController";
-//import { initSocket } from './socket';
+import {connectRabbitMQ} from "./config/rabbitmq";
+import {initEquipmentConsumer} from "./services/equipment.consumer";
 
 
 class App {
@@ -18,7 +17,7 @@ class App {
     private app: express.Application
     private server: Server
 
-    constructor(port = 8003, host = "localhost") {
+    constructor(port = 8004, host = "localhost") {
         this.port = port
         this.host = host
 
@@ -40,8 +39,6 @@ class App {
             defaultErrorHandler: true,
         };
         useSwagger(app, options);
-
-
         return app
     }
 
@@ -61,13 +58,13 @@ class App {
             .catch((err) => {
                 console.error("Error during Data Source initialization:", err)
             })
-        //await connectRabbitMQ();
-        //await initExchangeConsumer();
+        await connectRabbitMQ();
+        await initEquipmentConsumer();
 
-        // this.server.listen(this.port, () => {
-        //     console.log(`Running server on port ${this.port}`)
-        //     initSocket(this.server);
-        // })
+        this.server.listen(this.port, () => {
+            console.log(`Running server on port ${this.port}`)
+            // initSocket(this.server);
+        })
     }
 }
 

@@ -41,6 +41,4 @@ export class Equipment extends BaseEntity {
     @JoinColumn({ name: 'categoryId' })
     category: CategoriesEquipment;
 
-    // @Column({ nullable: true })
-    // categoryId: number;
 }

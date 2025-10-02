@@ -1,6 +1,7 @@
 import { In } from "typeorm";
 import dataSource from "../config/data-source";
 import { Booking } from "../models/booking.entity";
+import {getChannel} from "../config/rabbitmq";
 
 const bookingRepository = dataSource.getRepository(Booking);
 
@@ -51,5 +52,19 @@ export class BookingService {
 
         await bookingRepository.remove(booking);
         return true;
+    }
+
+
+    static async changeAvailable(equipmentId: string) {
+        getChannel().sendToQueue(
+            'booking_equipments',
+            Buffer.from(JSON.stringify({
+                type: 'MARK_UNAVAILABLE',
+                data: { equipmentId },
+                date: new Date()
+            }))
+        );
+
+        return;
     }
 }

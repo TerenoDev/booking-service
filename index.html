@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head><title>Booking Notifications Test</title></head>
+<body>
+<h2>Booking Notifications Test</h2>
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+<script>
+    const userId = prompt("Enter your userId to register:");
+    const socket = io("ws://localhost:8002");
+
+    socket.on("connect", () => {
+        socket.emit("register", parseInt(userId));
+        console.log("Registered as user", userId);
+    });
+
+    socket.on('new_booking_request', (data) => {
+
+        alert(`📖 📦 New Booking Notification #${data.bookingId} from user ${data.renterId}`);
+
+    });
+
+
+</script>
+</body>
+</html>
+

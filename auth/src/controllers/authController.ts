@@ -1,4 +1,4 @@
-import { Body, Post, Get, Req, Res, JsonController } from 'routing-controllers';
+import { Post, Get, Req, Res, JsonController } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { IsString, IsEmail, IsBoolean, IsNumber, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -6,7 +6,6 @@ import jwt from 'jsonwebtoken';
 import dataSource from '../config/data-source';
 import settings from '../config/config';
 import { User } from '../models/user.entity';
-//import checkPassword from '../utils/checkPassword';
 
 
 
@@ -129,10 +128,9 @@ export default class AuthController {
             return response.status(401).send({ message: "User is not found" });
         }
         const userPassword = user.password;
-        // const isPasswordCorrect = checkPassword(userPassword, password);
-        // if (!isPasswordCorrect) {
-        //     return response.status(401).send({ message: "Password or login is incorrect" });
-        // }
+
+
+
         const accessToken = jwt.sign({ user: { id: user.id } }, settings.JWT_SECRET_KEY)
         return response.send({ accessToken });
     }
@@ -186,9 +184,49 @@ export default class AuthController {
     })
     @ResponseSchema(User)
     async me(@Req() request: any, @Res() response: any) {
-        const { user } = request;
-        const userRepository = dataSource.getRepository(User);
-        const currentUser = await userRepository.findOneBy({ id: user.id });
-        return response.send(currentUser);
+        try {
+            console.log('Me endpoint - Headers:', request.headers);
+
+            const { authorization } = request.headers;
+
+            if (!authorization) {
+                return response.status(401).send({ message: "Authentication required" });
+            }
+
+            const token = authorization.split(' ')[1];
+            if (!token) {
+                return response.status(401).send({ message: "Token required" });
+            }
+
+
+            const decoded = jwt.verify(token, settings.JWT_SECRET_KEY) as any;
+            console.log('Decoded token:', decoded);
+
+            const user = decoded.user;
+            if (!user || !user.id) {
+                return response.status(401).send({ message: "Invalid token" });
+            }
+
+            const userRepository = dataSource.getRepository(User);
+            const currentUser = await userRepository.findOneBy({
+                id: user.id
+            });
+
+            if (!currentUser) {
+                return response.status(404).send({ message: "User not found" });
+            }
+
+            const { password, ...userWithoutPassword } = currentUser;
+            console.log('Returning user:', userWithoutPassword);
+            return response.send(userWithoutPassword);
+
+        } catch (error) {
+            console.error('Error in me endpoint:', error);
+            if (error instanceof jwt.JsonWebTokenError) {
+                return response.status(403).send({ message: "Invalid token" });
+            }
+            return response.status(500)
+
+        }
     }
 }

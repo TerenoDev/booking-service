@@ -1,13 +1,16 @@
 import { defaultMetadataStorage } from 'class-transformer/cjs/storage';
 import { Express } from 'express';
-import { getMetadataArgsStorage } from 'routing-controllers';
+import {
+    getMetadataArgsStorage,
+    RoutingControllersOptions,
+} from 'routing-controllers';
 import { routingControllersToSpec } from 'routing-controllers-openapi';
 import * as swaggerUi from 'swagger-ui-express';
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 
 export function useSwagger(
     app: Express,
-    options: any,
+    options: RoutingControllersOptions,
 ): Express {
     try {
         const schemas = validationMetadatasToSchemas({
@@ -29,8 +32,8 @@ export function useSwagger(
                 },
             },
             info: {
-                title: 'Booking Service API',
-                description: 'API documentation for Booking Service',
+                title: 'Booking API documentation',
+                description: 'API documentation for booking',
                 version: '1.0.0',
             },
         });
@@ -39,7 +42,8 @@ export function useSwagger(
 
         return app;
     } catch (error) {
-        console.error('Swagger setup error:', error);
+        console.error('Ошибка настройки Swagger:', error);
         return app;
     }
 }
+

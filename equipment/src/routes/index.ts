@@ -1,6 +1,6 @@
 import express from 'express'
-import equipmentRoutes from './equipmentroutes';
 import categoriesEquipmentRoutes from './categoriesEquipmentRoutes';
+import equipmentRoutes from "./equipmentRoutes";
 
 
 const router: express.Router = express.Router()
