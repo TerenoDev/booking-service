@@ -1,8 +1,11 @@
 // Middleware для авторизации
 import jwt from 'jsonwebtoken';
-
 import settings from '../config/config';
 
+
+interface DecodedToken {
+    user: any;
+}
 
 const authMiddleware = (request: any, response: any, next: any) => {
     const { headers } = request;
@@ -15,7 +18,9 @@ const authMiddleware = (request: any, response: any, next: any) => {
             return response.status(401).send({ message: "Unauthorized: no token provided" })
         }
 
-        const { user } = jwt.verify(accessToken, settings.JWT_SECRET_KEY);
+        
+        const decoded = jwt.verify(accessToken, settings.JWT_SECRET_KEY) as DecodedToken;
+        const { user } = decoded;
 
         request.user = user;
 

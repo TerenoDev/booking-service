@@ -1,0 +1,33 @@
+build-manual:
+  stage: build
+  script:
+    - rsync -av --progress ./ /var/www/apps/express-microservices-generator/
+    - docker compose -f /var/www/apps/express-microservices-generator/docker-compose.yml build
+  when: manual
+  only:
+    - main
+
+start-manual:
+  stage: deploy
+  script:
+    - docker compose -f /var/www/apps/express-microservices-generator/docker-compose.yml up -d
+  when: manual
+  only:
+    - main
+
+restart-manual:
+  stage: deploy
+  script:
+    - docker compose -f /var/www/apps/express-microservices-generator/docker-compose.yml restart
+  when: manual
+  only:
+    - main
+
+deployment:
+  stage: deploy
+  script:
+    - rsync -av --progress ./ /var/www/apps/express-microservices-generator/
+    - docker compose -f /var/www/apps/express-microservices-generator/docker-compose.yml build
+    - docker compose -f /var/www/apps/express-microservices-generator/docker-compose.yml up -d --force-recreate
+  only:
+    - main
