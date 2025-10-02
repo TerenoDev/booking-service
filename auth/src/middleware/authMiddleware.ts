@@ -18,7 +18,7 @@ const authMiddleware = (request: any, response: any, next: any) => {
             return response.status(401).send({ message: "Unauthorized: no token provided" })
         }
 
-        
+
         const decoded = jwt.verify(accessToken, settings.JWT_SECRET_KEY) as DecodedToken;
         const { user } = decoded;
 
